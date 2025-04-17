@@ -1,11 +1,15 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from datetime import datetime
 from typing import List
 import models
 import schemas
-from models import get_db
+from database import get_db, engine
 import json
+
+# 创建数据库表
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="碰撞机器人 API",
@@ -63,6 +67,7 @@ def create_game(game: schemas.GameCreate, db: Session = Depends(get_db)):
         walls=game.walls,
         target=game.target,
         limit=game.limit,
+        created_at=datetime.now()
     )
     db.add(db_game)
     db.commit()
