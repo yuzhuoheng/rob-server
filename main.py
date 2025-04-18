@@ -8,9 +8,6 @@ import schemas
 from database import get_db, engine
 import json
 
-# 创建数据库表
-models.Base.metadata.create_all(bind=engine)
-
 app = FastAPI(
     title="碰撞机器人 API",
     description="碰撞机器人游戏管理系统的 RESTful API",
@@ -25,6 +22,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 在应用启动时创建数据库表
+@app.on_event("startup")
+async def startup():
+    models.Base.metadata.create_all(bind=engine)
 
 def validate_json_string(json_str: str, field_name: str) -> None:
     """

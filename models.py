@@ -22,9 +22,6 @@ class Game(Base):
     limit = Column(Integer, default=180)           # 限时，默认180秒
     created_at = Column(DateTime)
 
-# 创建数据库表
-Base.metadata.create_all(bind=engine)
-
 # 数据库依赖
 def get_db():
     """
