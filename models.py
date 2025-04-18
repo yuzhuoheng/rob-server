@@ -11,7 +11,6 @@ class Game(Base):
         walls: 墙信息（JSON格式的字符串）
         target: 目的地信息（JSON格式的字符串）
         limit: 限时（秒，默认180秒）
-        created_at: 创建时间
     """
     __tablename__ = "game"
 
@@ -20,7 +19,6 @@ class Game(Base):
     walls = Column(String(2000), nullable=False)   # JSON格式的墙信息
     target = Column(String(2000), nullable=False)  # JSON格式的目标信息
     limit = Column(Integer, default=180)           # 限时，默认180秒
-    created_at = Column(DateTime)
 
 # 数据库依赖
 def get_db():

@@ -44,10 +44,8 @@ class GameInDB(GameBase):
     
     Attributes:
         id: 主键ID
-        created_at: 创建时间
     """
     id: int
-    created_at: datetime
 
     class Config:
         from_attributes = True 

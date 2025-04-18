@@ -68,8 +68,7 @@ def create_game(game: schemas.GameCreate, db: Session = Depends(get_db)):
         robots=game.robots,
         walls=game.walls,
         target=game.target,
-        limit=game.limit,
-        created_at=datetime.now()
+        limit=game.limit
     )
     db.add(db_game)
     db.commit()
