@@ -18,18 +18,4 @@ class Game(Base):
     robots = Column(String(2000), nullable=False)  # JSON格式的机器人信息
     walls = Column(String(2000), nullable=False)   # JSON格式的墙信息
     target = Column(String(2000), nullable=False)  # JSON格式的目标信息
-    limit = Column(Integer, default=180)           # 限时，默认180秒
-
-# 数据库依赖
-def get_db():
-    """
-    获取数据库会话
-    
-    Yields:
-        Session: 数据库会话
-    """
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close() 
+    limit = Column(Integer, default=180)           # 限时，默认180秒 
