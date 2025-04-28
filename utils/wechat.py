@@ -8,9 +8,8 @@ class WechatAPI:
     
     def __init__(self):
         # 从环境变量获取微信小程序配置
-        self.app_id = os.getenv("wx32842e0cc8a17d1c")
-        self.app_secret = os.getenv("6e42b0fb73f26434ea65069dc42cc846")
-        
+        self.app_id = os.getenv("WECHAT_APP_ID", "wx32842e0cc8a17d1c")
+        self.app_secret = os.getenv("WECHAT_APP_SECRET", "6e42b0fb73f26434ea65069dc42cc846")
         if not self.app_id or not self.app_secret:
             raise ValueError("请设置 WECHAT_APP_ID 和 WECHAT_APP_SECRET 环境变量")
     
