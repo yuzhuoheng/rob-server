@@ -1,9 +1,11 @@
-import httpx
+import aiohttp
 from fastapi import HTTPException
 import os
 from typing import Dict
 import random
 import string
+import ssl
+import certifi
 
 class WechatAPI:
     """微信API工具类"""
@@ -14,7 +16,24 @@ class WechatAPI:
         self.app_secret = os.getenv("WECHAT_APP_SECRET", "6e42b0fb73f26434ea65069dc42cc846")
         if not self.app_id or not self.app_secret:
             raise ValueError("请设置 WECHAT_APP_ID 和 WECHAT_APP_SECRET 环境变量")
+        self.session = None
     
+    async def get_session(self):
+        """
+        获取或创建 aiohttp 会话
+        
+        Returns:
+            aiohttp.ClientSession: aiohttp 会话对象
+        """
+        if self.session is None:
+            # 创建 SSL 上下文，禁用证书验证
+            ssl_context = ssl.create_default_context(cafile=certifi.where())
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+            
+            self.session = aiohttp.ClientSession(trust_env=True)
+        return self.session
+
     async def get_openid(self, code: str) -> str:
         """
         通过 code 获取用户 openid
@@ -38,19 +57,24 @@ class WechatAPI:
                 f"&grant_type=authorization_code"
             )
             
-            async with httpx.AsyncClient() as client:
-                response = await client.get(url)
-                data = response.json()
-                
-                if "errcode" in data:
+            session = await self.get_session()
+            async with session.get(url, ssl=False) as response:
+                if response.status != 200:
                     raise HTTPException(
                         status_code=500,
-                        detail=f"获取用户openid失败: {data.get('errmsg', '未知错误')}"
+                        detail=f"微信API请求失败，状态码: {response.status}"
+                    )
+                    
+                data = await response.json()
+                if "errcode" in data and data["errcode"] != 0:
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"微信API返回错误: {data['errmsg']}"
                     )
                 
                 return data.get("openid", "")
                 
-        except httpx.RequestError as e:
+        except Exception as e:
             raise HTTPException(
                 status_code=500,
                 detail=f"调用微信API失败: {str(e)}"
