@@ -2,6 +2,8 @@ import httpx
 from fastapi import HTTPException
 import os
 from typing import Dict
+import random
+import string
 
 class WechatAPI:
     """微信API工具类"""
@@ -13,71 +15,59 @@ class WechatAPI:
         if not self.app_id or not self.app_secret:
             raise ValueError("请设置 WECHAT_APP_ID 和 WECHAT_APP_SECRET 环境变量")
     
-    async def get_user_info(self, openid: str) -> Dict[str, str]:
+    async def get_openid(self, code: str) -> str:
         """
-        获取微信用户信息
+        通过 code 获取用户 openid
         
         Args:
-            openid: 用户的openid
+            code: 小程序登录时获取的 code
             
         Returns:
-            Dict: 包含用户信息的字典
-            {
-                "nickname": "用户昵称",
-                "avatar_url": "头像URL",
-                "openid": "用户openid"
-            }
+            str: 用户的 openid
             
         Raises:
             HTTPException: 当调用微信API失败时
         """
         try:
-            # 获取接口调用凭证
-            access_token_url = (
-                f"https://api.weixin.qq.com/cgi-bin/token"
-                f"?grant_type=client_credential"
-                f"&appid={self.app_id}"
+            # 使用 code2session 接口获取用户 openid
+            url = (
+                f"https://api.weixin.qq.com/sns/jscode2session"
+                f"?appid={self.app_id}"
                 f"&secret={self.app_secret}"
+                f"&js_code={code}"
+                f"&grant_type=authorization_code"
             )
             
             async with httpx.AsyncClient() as client:
-                # 获取access_token
-                response = await client.get(access_token_url)
-                token_data = response.json()
+                response = await client.get(url)
+                data = response.json()
                 
-                if "access_token" not in token_data:
+                if "errcode" in data:
                     raise HTTPException(
                         status_code=500,
-                        detail=f"获取微信access_token失败: {token_data.get('errmsg', '未知错误')}"
+                        detail=f"获取用户openid失败: {data.get('errmsg', '未知错误')}"
                     )
                 
-                access_token = token_data["access_token"]
-                
-                # 获取用户信息
-                user_info_url = (
-                    f"https://api.weixin.qq.com/cgi-bin/user/info"
-                    f"?access_token={access_token}"
-                    f"&openid={openid}"
-                    f"&lang=zh_CN"
-                )
-                
-                response = await client.get(user_info_url)
-                user_data = response.json()
-                
-                if "errcode" in user_data:
-                    raise HTTPException(
-                        status_code=500,
-                        detail=f"获取微信用户信息失败: {user_data.get('errmsg', '未知错误')}"
-                    )
-                
-                return {
-                    "nickname": user_data.get("nickname", ""),
-                    "avatar_url": user_data.get("headimgurl", ""),
-                    "openid": openid
-                }
+                return data.get("openid", "")
                 
         except httpx.RequestError as e:
             raise HTTPException(
                 status_code=500,
                 detail=f"调用微信API失败: {str(e)}"
-            ) 
+            )
+    
+    @staticmethod
+    def generate_robot_name() -> str:
+        """生成机器人名称"""
+        # 生成4位随机字符（数字和大写字母的组合）
+        random_chars = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+        return f"机器人_{random_chars}"
+
+if __name__ == "__main__":
+    import asyncio
+    api = WechatAPI()
+    # 注意：这里需要传入从小程序获取的 code，而不是 openid
+    # code 的有效期很短，需要在小程序端调用 wx.login() 获取
+    test_code = "0f1FLSkl2VW5uf4kv6ml2kkepN1FLSkA"  # 这里需要替换为真实的code
+    res = asyncio.run(api.get_openid(test_code))
+    print(res)

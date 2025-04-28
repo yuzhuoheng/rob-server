@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import Dict
 
 import models
 import schemas
@@ -16,20 +17,23 @@ router = APIRouter(
 wechat_api = WechatAPI()
 
 @router.post("/login", response_model=schemas.UserInDB)
-async def login(openid: str, db: Session = Depends(get_db)):
+async def login(code: str, db: Session = Depends(get_db)):
     """
     用户登录
     
-    如果用户存在，直接返回用户信息
-    如果用户不存在，从微信获取用户信息并注册
-    
     Args:
-        openid: 用户的openid
+        code: 小程序登录时获取的 code
         db: 数据库会话
     
     Returns:
-        UserInDB: 用户信息
+        UserInDB: 用户信息，包含：
+        - openid: 用户唯一标识
+        - nickname: 用户昵称
+        - avatar_url: 头像地址
     """
+    # 通过 code 获取 openid
+    openid = await wechat_api.get_openid(code)
+    
     # 检查用户是否存在
     db_user = db.query(models.User).filter(models.User.openid == openid).first()
     
@@ -37,16 +41,18 @@ async def login(openid: str, db: Session = Depends(get_db)):
         # 用户存在，直接返回
         return db_user
     
-    # 用户不存在，从微信获取用户信息
-    user_info = await wechat_api.get_user_info(openid)
+    # 用户不存在，创建新用户
+    new_user = models.User(
+        openid=openid,
+        nickname=wechat_api.generate_robot_name(),  # 生成机器人昵称
+        avatar_url=""  # 默认空头像
+    )
     
-    # 创建新用户
-    db_user = models.User(**user_info)
-    db.add(db_user)
+    db.add(new_user)
     db.commit()
-    db.refresh(db_user)
+    db.refresh(new_user)
     
-    return db_user
+    return new_user
 
 @router.post("/", response_model=schemas.UserInDB)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
