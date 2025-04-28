@@ -42,10 +42,11 @@ async def login(code: str, db: Session = Depends(get_db)):
         return db_user
     
     # 用户不存在，创建新用户
+    print(openid)
     new_user = models.User(
         openid=openid,
         nickname=wechat_api.generate_robot_name(),  # 生成机器人昵称
-        avatar_url=""  # 默认空头像
+        avatar_url="https://thirdwx.qlogo.cn/mmopen/vi_32/POgEwh4mIHO4nibH0KlMECNjjGxQUq24ZEaGT4poC6icRiccVGKSyXwibcPq4BWmiaIGuG1icwxaQX6grC9VemZoJ8rg/132"  # 默认空头像
     )
     
     db.add(new_user)
