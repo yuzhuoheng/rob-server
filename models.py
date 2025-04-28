@@ -18,4 +18,21 @@ class Game(Base):
     robots = Column(String(2000), nullable=False)  # JSON格式的机器人信息
     walls = Column(String(2000), nullable=False)   # JSON格式的墙信息
     target = Column(String(2000), nullable=False)  # JSON格式的目标信息
-    limit = Column(Integer, default=180)           # 限时，默认180秒 
+    limit = Column(Integer, default=180)           # 限时，默认180秒
+
+class User(Base):
+    """
+    用户表模型
+    
+    Attributes:
+        id: 主键ID
+        avatar_url: 头像地址
+        openid: 微信openid
+        nickname: 用户昵称
+    """
+    __tablename__ = "user"
+
+    id = Column(Integer, primary_key=True, index=True)
+    avatar_url = Column(String(500), nullable=False)  # 头像地址
+    openid = Column(String(100), unique=True, nullable=False, index=True)  # 微信openid
+    nickname = Column(String(100), nullable=False)  # 用户昵称 

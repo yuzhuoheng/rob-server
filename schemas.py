@@ -48,4 +48,46 @@ class GameInDB(GameBase):
     id: int
 
     class Config:
+        from_attributes = True
+
+class UserBase(BaseModel):
+    """
+    用户基础模型
+    
+    Attributes:
+        avatar_url: 头像地址
+        openid: 微信openid
+        nickname: 用户昵称
+    """
+    avatar_url: str = Field(..., description="头像地址")
+    openid: str = Field(..., description="微信openid")
+    nickname: str = Field(..., description="用户昵称")
+
+class UserCreate(UserBase):
+    """
+    创建用户模型
+    """
+    pass
+
+class UserUpdate(BaseModel):
+    """
+    更新用户模型
+    
+    Attributes:
+        avatar_url: 可选的头像地址更新
+        nickname: 可选的用户昵称更新
+    """
+    avatar_url: Optional[str] = None
+    nickname: Optional[str] = None
+
+class UserInDB(UserBase):
+    """
+    数据库用户模型
+    
+    Attributes:
+        id: 主键ID
+    """
+    id: int
+
+    class Config:
         from_attributes = True 
