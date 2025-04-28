@@ -1,11 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Dict
+from pydantic import BaseModel
 
 import models
 import schemas
 from database import get_db
 from utils.wechat import WechatAPI
+
+# 定义请求体模型
+class LoginRequest(BaseModel):
+    code: str
 
 router = APIRouter(
     prefix="/users",
@@ -17,12 +22,12 @@ router = APIRouter(
 wechat_api = WechatAPI()
 
 @router.post("/login", response_model=schemas.UserInDB)
-async def login(code: str, db: Session = Depends(get_db)):
+async def login(request: LoginRequest, db: Session = Depends(get_db)):
     """
     用户登录
     
     Args:
-        code: 小程序登录时获取的 code
+        request: 包含 code 的请求体
         db: 数据库会话
     
     Returns:
@@ -32,7 +37,9 @@ async def login(code: str, db: Session = Depends(get_db)):
         - avatar_url: 头像地址
     """
     # 通过 code 获取 openid
-    openid = await wechat_api.get_openid(code)
+    print(request.code)
+    openid = await wechat_api.get_openid(request.code)
+    print(openid)
     
     # 检查用户是否存在
     db_user = db.query(models.User).filter(models.User.openid == openid).first()
@@ -42,11 +49,10 @@ async def login(code: str, db: Session = Depends(get_db)):
         return db_user
     
     # 用户不存在，创建新用户
-    print(openid)
     new_user = models.User(
         openid=openid,
         nickname=wechat_api.generate_robot_name(),  # 生成机器人昵称
-        avatar_url="https://thirdwx.qlogo.cn/mmopen/vi_32/POgEwh4mIHO4nibH0KlMECNjjGxQUq24ZEaGT4poC6icRiccVGKSyXwibcPq4BWmiaIGuG1icwxaQX6grC9VemZoJ8rg/132"  # 默认空头像
+        avatar_url="https://thirdwx.qlogo.cn/mmopen/vi_32/POgEwh4mIHO4nibH0KlMECNjjGxQUq24ZEaGT4poC6icRiccVGKSyXwibcPq4BWmiaIGuG1icwxaQX6grC9VemZoJ8rg/132"  # 默认头像
     )
     
     db.add(new_user)
