@@ -27,11 +27,12 @@ class WechatAPI:
         """
         if self.session is None:
             # 创建 SSL 上下文，禁用证书验证
-            ssl_context = ssl.create_default_context(cafile=certifi.where())
+            ssl_context = ssl.create_default_context()
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
             
-            self.session = aiohttp.ClientSession(trust_env=True)
+            connector = aiohttp.TCPConnector(ssl=ssl_context)
+            self.session = aiohttp.ClientSession(connector=connector)
         return self.session
 
     async def get_openid(self, code: str) -> str:
@@ -56,6 +57,9 @@ class WechatAPI:
                 f"&js_code={code}"
                 f"&grant_type=authorization_code"
             )
+            print(self.app_id)
+            print(self.app_secret)
+            print(code)
             
             session = await self.get_session()
             async with session.get(url, ssl=False) as response:
