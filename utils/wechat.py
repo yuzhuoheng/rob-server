@@ -6,7 +6,7 @@ import random
 import string
 import ssl
 import certifi
-
+import json
 class WechatAPI:
     """微信API工具类"""
     
@@ -68,8 +68,9 @@ class WechatAPI:
                         status_code=500,
                         detail=f"微信API请求失败，状态码: {response.status}"
                     )
-                    
-                data = await response.json()
+                data = await response.text()
+                data = json.loads(data)
+                print(data)
                 if "errcode" in data and data["errcode"] != 0:
                     raise HTTPException(
                         status_code=500,
@@ -96,6 +97,6 @@ if __name__ == "__main__":
     api = WechatAPI()
     # 注意：这里需要传入从小程序获取的 code，而不是 openid
     # code 的有效期很短，需要在小程序端调用 wx.login() 获取
-    test_code = "0f1FLSkl2VW5uf4kv6ml2kkepN1FLSkA"  # 这里需要替换为真实的code
+    test_code = "0b1wXuml2nLYvf4CoUol2auAvE4wXumV"  # 这里需要替换为真实的code
     res = asyncio.run(api.get_openid(test_code))
     print(res)
